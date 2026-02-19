@@ -13,6 +13,7 @@ import {
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import { useShop } from '../context/ShopContext';
+import { findMockProductByBarcode } from '../data/mockProducts';
 import { getProductBySku } from '../db/products';
 import { apiClient } from '../api/client';
 import { Product } from '../types';
@@ -41,10 +42,13 @@ export default function HomeScreen() {
       lastScan.current = data;
       setIsProcessing(true);
 
-      // 1. Try offline SQLite first
-      let product: Product | null = getProductBySku(data);
+      // 1. Check built-in mock products first (works with NO backend)
+      let product: Product | null = findMockProductByBarcode(data);
 
-      // 2. Fallback to backend if online
+      // 2. Check SQLite cache
+      if (!product) product = getProductBySku(data);
+
+      // 3. Fallback to backend API if online
       if (!product && isOnline) {
         try {
           const res = await apiClient.get(`/products/lookup?barcode=${encodeURIComponent(data)}`);

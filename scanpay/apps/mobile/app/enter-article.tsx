@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useShop } from '../context/ShopContext';
+import { findMockProductByArticleNo } from '../data/mockProducts';
 import { getProductByArticleNo } from '../db/products';
 import { apiClient } from '../api/client';
 import { Product } from '../types';
@@ -35,10 +36,13 @@ export default function EnterArticleScreen() {
     if (!articleNo.trim()) return;
     setIsLoading(true);
 
-    // 1. Try offline SQLite first
-    let product: Product | null = getProductByArticleNo(articleNo.trim());
+    // 1. Check mock products first (no backend needed)
+    let product: Product | null = findMockProductByArticleNo(articleNo.trim());
 
-    // 2. If not cached and online, fetch from backend
+    // 2. Try SQLite cache
+    if (!product) product = getProductByArticleNo(articleNo.trim());
+
+    // 3. If not cached and online, fetch from backend
     if (!product && isOnline) {
       try {
         const res = await apiClient.get(`/products/lookup?articleNo=${articleNo.trim()}`);
